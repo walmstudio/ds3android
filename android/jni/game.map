@@ -1,0 +1,1 @@
+{ global: Java_*; JNI_OnLoad; ds3_main; me1_*; me1gl_*; local: *; };

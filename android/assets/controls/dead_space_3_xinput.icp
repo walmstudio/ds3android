@@ -1,0 +1,217 @@
+{
+  "id": 103,
+  "name": "Dead Space 3 — XInput",
+  "cursorSpeed": 1,
+  "elements": [
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_L2",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.15,
+      "y": 0.14,
+      "scale": 0.72,
+      "text": "LT"
+    },
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_L1",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.225,
+      "y": 0.14,
+      "scale": 0.72,
+      "text": "LB"
+    },
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_R1",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.775,
+      "y": 0.14,
+      "scale": 0.72,
+      "text": "RB"
+    },
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_R2",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.85,
+      "y": 0.14,
+      "scale": 0.72,
+      "text": "RT"
+    },
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_SELECT",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.44,
+      "y": 0.14,
+      "scale": 0.72,
+      "text": "Back"
+    },
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_START",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.56,
+      "y": 0.14,
+      "scale": 0.72,
+      "text": "Start"
+    },
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_L3",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.07,
+      "y": 0.6,
+      "scale": 0.72,
+      "text": "L3"
+    },
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_R3",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.93,
+      "y": 0.6,
+      "scale": 0.72,
+      "text": "R3"
+    },
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_Y",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.89,
+      "y": 0.28,
+      "scale": 0.72,
+      "text": "Y"
+    },
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_X",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.83,
+      "y": 0.39,
+      "scale": 0.72,
+      "text": "X"
+    },
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_B",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.95,
+      "y": 0.39,
+      "scale": 0.72,
+      "text": "B"
+    },
+    {
+      "type": "BUTTON",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_BUTTON_A",
+        "NONE",
+        "NONE",
+        "NONE"
+      ],
+      "x": 0.89,
+      "y": 0.5,
+      "scale": 0.72,
+      "text": "A"
+    },
+    {
+      "type": "STICK",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_LEFT_THUMB_UP",
+        "GAMEPAD_LEFT_THUMB_RIGHT",
+        "GAMEPAD_LEFT_THUMB_DOWN",
+        "GAMEPAD_LEFT_THUMB_LEFT"
+      ],
+      "x": 0.2,
+      "y": 0.78,
+      "scale": 1.1,
+      "text": "LS"
+    },
+    {
+      "type": "STICK",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_RIGHT_THUMB_UP",
+        "GAMEPAD_RIGHT_THUMB_RIGHT",
+        "GAMEPAD_RIGHT_THUMB_DOWN",
+        "GAMEPAD_RIGHT_THUMB_LEFT"
+      ],
+      "x": 0.8,
+      "y": 0.78,
+      "scale": 1.1,
+      "text": "RS"
+    },
+    {
+      "type": "D_PAD",
+      "shape": "CIRCLE",
+      "bindings": [
+        "GAMEPAD_DPAD_UP",
+        "GAMEPAD_DPAD_RIGHT",
+        "GAMEPAD_DPAD_DOWN",
+        "GAMEPAD_DPAD_LEFT"
+      ],
+      "x": 0.11,
+      "y": 0.38,
+      "scale": 0.8,
+      "text": ""
+    }
+  ]
+}
