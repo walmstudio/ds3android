@@ -16,6 +16,7 @@
 #define _GNU_SOURCE
 #include "hle.h"
 #include "ds3_audio_trace.h"
+#include "ds3_aa_buffer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +24,7 @@
 #include <math.h>
 #include <float.h>
 #include <pthread.h>
+#include <stdatomic.h>
 #include <time.h>
 #include <unistd.h>
 #include <dlfcn.h>
@@ -525,8 +527,10 @@ static void render_audio(int16_t* out, int frames, uintptr_t epoch) {
         ds3_audio_trace(DAT_MIX_END,0,n,0,0);
         UL;
         /* T-3: no active sources — sleep instead of spinning, so the host core
-         * can idle instead of burning cycles rendering silence. */
-        if (act == 0 && g_audio_tick_ms > 0) usleep((useconds_t)g_audio_tick_ms * 1000);
+         * can idle instead of burning cycles rendering silence.
+         * Never sleep on the AAudio callback path (epoch != 0): that would
+         * miss the callback deadline and cause xruns. */
+        if (act == 0 && g_audio_tick_ms > 0 && epoch == 0) usleep((useconds_t)g_audio_tick_ms * 1000);
         for (int i = 0; i < 2 * n; i++) out[i] = s16(mix[i] * g_master);
         out += 2 * n; frames -= n;
     }
@@ -550,9 +554,10 @@ static AAS* g_aas;
 static pthread_mutex_t g_aa_mx = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_aa_cv = PTHREAD_COND_INITIALIZER;
 static uintptr_t g_aa_epoch, g_aa_error_epoch, g_aa_request;
-static _Atomic unsigned st_restarts;
+static _Atomic unsigned st_restarts, st_xruns;
 static int32_t aa_data(AAS* s, void* u, void* data, int32_t n) {
-    (void)s; render_audio(data, n, (uintptr_t)u); return 0;
+    if (AA.xruns && s) atomic_store(&st_xruns, (unsigned)AA.xruns(s));
+    render_audio(data, n, (uintptr_t)u); return 0;
 }
 static int start_null_sink(void);
 static void aa_error(AAS* s, void* u, int32_t err) {
@@ -603,7 +608,7 @@ static int aa_open(uintptr_t request) {
     int rate = AA.getrate(s);
     if (rate <= 0) { fprintf(stderr, "[al] AAudio: invalid sample rate\n"); AA.close(s); return 0; }
     int burst = AA.burst ? AA.burst(s) : 0;
-    if (AA.setbuf && burst > 0) { int want = burst * 4, floor = rate / 25; while (want < floor) want += burst; AA.setbuf(s, want); }   /* 4 bursts, >= 40 ms */
+    if (AA.setbuf && burst > 0) { int want = ds3_aa_buffer_frames(rate, burst); if (want > 0) AA.setbuf(s, want); }   /* 4 bursts, >= ~90 ms */
     g_aas = s;
     if (AA.start(s)) { fprintf(stderr, "[al] AAudio requestStart failed\n"); AA.close(s); g_aas = NULL; return 0; }
     return rate;
@@ -1766,8 +1771,8 @@ void hle_al_report(void) {
     ds3_audio_trace_finish();
     if (!g_ndev && !st_gensrc && !st_genbuf && !st_ds_create) return;
     char b[256]; int rate = al_brief(b, sizeof b);
-    fprintf(stderr, "[al] report: %s; %u sources and %u buffers generated, %llu alBufferData, %.1f s mixed (max %u voices), %u errors, %u output restarts\n",
-            b, st_gensrc, st_genbuf, (unsigned long long)st_bufdata, (double)st_frames / rate, st_maxact, st_errs, st_restarts);
+    fprintf(stderr, "[al] report: %s; %u sources and %u buffers generated, %llu alBufferData, %.1f s mixed (max %u voices), %u errors, %u output restarts, %u aaudio xruns\n",
+            b, st_gensrc, st_genbuf, (unsigned long long)st_bufdata, (double)st_frames / rate, st_maxact, st_errs, st_restarts, atomic_load(&st_xruns));
     if (g_wav) wav_header();
 }
 

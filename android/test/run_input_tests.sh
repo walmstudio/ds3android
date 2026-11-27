@@ -8,8 +8,8 @@ sdk=${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/Android/Sdk}}
 jar=${ANDROID_JAR:-$sdk/platforms/android-34/android.jar}
 src=android/src/com/ds3port/launcher
 javac -cp "$jar" -d "$out" android/test/input/{Handler,Looper,GameActivity,PadTest,TouchMouseTest,RelativeTouchpadTest}.java \
-    "$src/Pad.java" "$src/PadAxes.java" "$src/TouchMouse.java" "$src/RelativeTouchpad.java"
-for t in triggers hat touch reset axes sourceOwnership quantizedOwnership stickOwnership sinks; do
+    "$src/Pad.java" "$src/PadMap.java" "$src/PadAxes.java" "$src/TouchMouse.java" "$src/RelativeTouchpad.java" "$src/L.java"
+for t in triggers hat touch reset axes sourceOwnership quantizedOwnership stickOwnership sinks remap rearm; do
   java -cp "$out:$jar" com.ds3port.launcher.PadTest "$t" || failed=1
 done
 java -cp "$out:$jar" com.ds3port.launcher.TouchMouseTest || failed=1
@@ -18,7 +18,7 @@ python3 android/test/input_cancel_test.py || failed=1
 python3 android/test/input_profile_test.py || failed=1
 if [[ -n ${INPUT_JSON_JAR:-} ]]; then
   javac -cp "$jar" -d "$out/profile" android/test/input/{ControlsProfileTest,Context,AssetManager}.java \
-      "$src/"{Pad,Bind,CtlDialogs,CtlProfile,ControlsSettings,L}.java \
+      "$src/"{Pad,PadMap,Bind,CtlDialogs,CtlProfile,ControlsSettings,L}.java \
       android/test/input/{Handler,Looper,GameActivity}.java
   java -cp "$out/profile:$INPUT_JSON_JAR:$jar" com.ds3port.launcher.ControlsProfileTest "$out/saved" || failed=1
 fi

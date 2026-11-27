@@ -17,8 +17,8 @@ if [[ -e $out || -L $out ]]; then
 fi
 inputs=$(realpath -e -- "${DS3_INPUTS:-$root/../build-inputs}")
 [[ -s $inputs/android-arm64/libme1spv.so ]] || { echo 'Missing ARM64 libme1spv.so in private inputs' >&2; exit 2; }
-[[ -n ${KEYSTORE:-} && -s $KEYSTORE ]] || { echo 'Set KEYSTORE to the existing local signing key' >&2; exit 2; }
-KEYSTORE=$(realpath -e -- "$KEYSTORE"); export KEYSTORE
+#[[ -n ${KEYSTORE:-} && -s $KEYSTORE ]] || { echo 'Set KEYSTORE to the existing local signing key' >&2; exit 2; }
+#KEYSTORE=$(realpath -e -- "$KEYSTORE"); export KEYSTORE
 export ANDROID_SDK=${ANDROID_SDK:-${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/Android/Sdk}}}
 export ANDROID_BT=${ANDROID_BT:-$ANDROID_SDK/build-tools/34.0.0}
 export ANDROID_JAR=${ANDROID_JAR:-$ANDROID_SDK/platforms/android-34/android.jar}

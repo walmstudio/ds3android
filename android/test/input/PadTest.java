@@ -155,6 +155,36 @@ final class PadTest {
             if (!GameActivity.kbm.equals(java.util.Arrays.asList("33:1", "33:0")))
                 throw new AssertionError("old keyboard sink did not release: " + GameActivity.kbm);
             break;
+        case "remap": {
+            java.util.Map<String, String> map = new java.util.HashMap<>();
+            map.put("a", "b");
+            map.put("b", "none");
+            map.put("lt", "a");
+            pad.setButtonMap(map);
+            pad.physKey(1, KeyEvent.KEYCODE_BUTTON_A, true);
+            eq(Pad.B, GameActivity.state[0], "A remapped to B");
+            pad.physKey(1, KeyEvent.KEYCODE_BUTTON_A, false);
+            pad.physKey(1, KeyEvent.KEYCODE_BUTTON_B, true);
+            eq(0, GameActivity.state[0], "B remapped to none");
+            pad.physKey(1, KeyEvent.KEYCODE_BUTTON_B, false);
+            pad.physKey(1, KeyEvent.KEYCODE_BUTTON_L2, true);
+            eq(Pad.A, GameActivity.state[0], "LT remapped to A");
+            eq(0, GameActivity.state[1], "LT no longer a trigger");
+            PadMap.Applied auto = PadMap.apply(Pad.A, 0, 0, java.util.Collections.emptyMap());
+            eq(Pad.A, auto.buttons, "empty map keeps A");
+            break;
+        }
+        case "rearm":
+            pad.physKey(1, KeyEvent.KEYCODE_BUTTON_A, true);
+            eq(Pad.A, GameActivity.state[0], "A held before pause");
+            pad.requireNeutral();
+            eq(0, GameActivity.state[0], "held A must not rearm after resume");
+            pad.physKey(1, KeyEvent.KEYCODE_BUTTON_A, true);
+            eq(0, GameActivity.state[0], "still-held A ignored until release");
+            pad.physKey(1, KeyEvent.KEYCODE_BUTTON_A, false);
+            pad.physKey(1, KeyEvent.KEYCODE_BUTTON_A, true);
+            eq(Pad.A, GameActivity.state[0], "fresh press after neutral is accepted");
+            break;
         default: throw new AssertionError(args[0]);
         }
         System.out.println(args[0] + ": PASS");
