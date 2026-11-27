@@ -194,17 +194,38 @@ static void event(const SDL_Event *e) {
     }
 }
 
+static const char* lang_code(const char* c) {
+    if (!strcmp(c, "ru")) return "ru_RU";
+    if (!strcmp(c, "en")) return "en_EN";
+    return NULL;
+}
+
 int main(int argc,char **argv) {
-    int first=1;
-    if (argc==5 && !strcmp(argv[1],"--language")) {
-        const char* locale=!strcmp(argv[2],"ru")?"ru_RU":!strcmp(argv[2],"en")?"en_EN":NULL;
-        if (!locale) { fprintf(stderr,"--language: expected ru or en\n"); return 2; }
-        if (setenv("EAGameLocale",locale,1)) { perror("EAGameLocale"); return 2; }
-        fprintf(stderr,"[ds3-wayland] EAGameLocale=%s\n",locale);
-        first=3;
+    /* Both forms are accepted: "--language ru GAME [DOCS]" (play-ds3.sh) and "--game DIR [--docs DIR] [--lang ru]"
+     * (the launcher). DOCS is optional; ds3_main derives $XDG_DATA_HOME/ds3port/Documents when it is absent. */
+    const char* pos[2]; int npos = 0; const char* lang = NULL;
+    for (int i = 1; i < argc; i++) {
+        const char* a = argv[i];
+        if (!strcmp(a, "--language") || !strcmp(a, "--lang")) {
+            if (i + 1 >= argc || !(lang = lang_code(argv[++i]))) { fprintf(stderr, "%s: expected ru or en\n", a); return 2; }
+        } else if (!strcmp(a, "--game")) {
+            if (i + 1 >= argc) { fprintf(stderr, "--game: missing directory\n"); return 2; }
+            game = argv[++i];
+        } else if (!strcmp(a, "--docs")) {
+            if (i + 1 >= argc) { fprintf(stderr, "--docs: missing directory\n"); return 2; }
+            docs = argv[++i];
+        } else if (a[0] == '-' && a[1]) {
+            fprintf(stderr, "usage: %s [--language ru|en] GAME_DIR [DOCS_DIR] | --game DIR [--docs DIR] [--lang ru|en]\n", argv[0]); return 2;
+        } else if (npos < 2) pos[npos++] = a;
+        else { fprintf(stderr, "usage: %s [--language ru|en] GAME_DIR [DOCS_DIR] | --game DIR [--docs DIR] [--lang ru|en]\n", argv[0]); return 2; }
     }
-    if (argc!=first+2) { fprintf(stderr,"usage: %s [--language ru|en] GAME_DIR DOCS_DIR\n",argv[0]); return 2; }
-    game=argv[first]; docs=argv[first+1];
+    if (!game && npos > 0) game = pos[0];
+    if (!docs && npos > 1) docs = pos[1];
+    if (!game) { fprintf(stderr, "usage: %s [--language ru|en] GAME_DIR [DOCS_DIR] | --game DIR [--docs DIR] [--lang ru|en]\n", argv[0]); return 2; }
+    if (lang) {
+        if (setenv("EAGameLocale", lang, 1)) { perror("EAGameLocale"); return 2; }
+        fprintf(stderr, "[ds3-wayland] EAGameLocale=%s\n", lang);
+    }
     ds3_audio_trace_init();
     const char *trace=getenv("DS3_FRAME_TRACE");
     frame_trace=trace && !strcmp(trace,"1");

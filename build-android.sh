@@ -3,7 +3,18 @@ set -euo pipefail
 umask 077
 root=$(cd -- "$(dirname -- "$0")" && pwd -P)
 out=${1:-"$root/../build-output/android"}
-[[ $# -le 1 && ! -e $out && ! -L $out ]] || { echo 'Pass a new output directory' >&2; exit 2; }
+[[ $# -le 1 ]] || { echo "usage: $0 [OUTPUT_DIR]" >&2; exit 2; }
+out=$(realpath -m -- "$out")
+[[ $out != / && $out != "$HOME" && $out != "$root" && $out != "$root"/* && $out != "$(dirname -- "$root")" ]] \
+    || { echo "Refusing to use $out as the output directory" >&2; exit 2; }
+if [[ -e $out || -L $out ]]; then
+    [[ -d $out && ! -L $out ]] || { echo "Output path exists and is not a directory: $out" >&2; exit 2; }
+    if [[ -n $(ls -A -- "$out") && ! ( -f $out/SHA256SUMS && -f $out/ds3port.apk ) ]]; then
+        echo "Output directory is not empty and is not a previous Android build: $out" >&2
+        echo 'Pass an empty or non-existent directory, or remove the old contents.' >&2
+        exit 2
+    fi
+fi
 inputs=$(realpath -e -- "${DS3_INPUTS:-$root/../build-inputs}")
 [[ -s $inputs/android-arm64/libme1spv.so ]] || { echo 'Missing ARM64 libme1spv.so in private inputs' >&2; exit 2; }
 [[ -n ${KEYSTORE:-} && -s $KEYSTORE ]] || { echo 'Set KEYSTORE to the existing local signing key' >&2; exit 2; }
@@ -49,7 +60,7 @@ PRIVATE_DEV=1 NO_EXE= NO_D3DX=1 NO_GPU=1 REQUIRE_DS3_VULKAN=1 \
 "$ANDROID_BT/apksigner" verify "$apk"
 "$ANDROID_BT/zipalign" -c -p 4 "$apk"
 mkdir -p -- "$(dirname -- "$out")"
-mkdir -- "$out"
+mkdir -p -- "$out"
 install -m 600 -- "$apk" "$out/ds3port.apk"
 (cd -- "$out" && sha256sum -- ds3port.apk > SHA256SUMS)
 printf 'Android build: %s/ds3port.apk\n' "$out"

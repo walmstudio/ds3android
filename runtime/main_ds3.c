@@ -5,6 +5,7 @@
 #include "../settings/ds3settings.h"
 #include <stdio.h>
 #include <pthread.h>
+#include <unistd.h>
 
 extern const FuncEntry ds3_funcs[];
 extern const ImportEntry ds3_imports[];
@@ -17,7 +18,32 @@ static const Ds3Platform *platform;
 static void on_window(unsigned w, unsigned h) { if (platform->window) platform->window(platform->opaque, w, h); }
 static void on_present(void) { if (platform->present) platform->present(platform->opaque); }
 static void on_input(void) { if (platform->poll_input) platform->poll_input(platform->opaque); }
+/* The image ships next to the executable (build-output/linux/image.bin); the build tree keeps it in out/exe. */
+static const char* default_image(char* buf, size_t cap) {
+    char exe[1100];
+    ssize_t n = readlink("/proc/self/exe", exe, sizeof exe - 1);
+    if (n > 0) {
+        exe[n] = 0;
+        char* slash = strrchr(exe, '/');
+        if (slash) {
+            *slash = 0;
+            snprintf(buf, cap, "%s/image.bin", exe);
+            if (access(buf, R_OK) == 0) return buf;
+        }
+    }
+    snprintf(buf, cap, "out/exe/image.bin");
+    return buf;
+}
+
 static uint32_t result;
+/* The guest's C:\Users\Shepard\Documents. Derived the same way the launcher does, so the launcher does not have to
+ * pass it: $XDG_DATA_HOME/ds3port/Documents, else ~/.local/share/ds3port/Documents. */
+static const char* default_docs(char* buf, size_t cap) {
+    const char* xd = getenv("XDG_DATA_HOME");
+    if (xd && *xd) snprintf(buf, cap, "%s/ds3port/Documents", xd);
+    else { const char* h = getenv("HOME"); snprintf(buf, cap, "%s/.local/share/ds3port/Documents", h && *h ? h : "."); }
+    return buf;
+}
 static void *entry_thread(void *unused) {
     (void)unused;
     result = rt_call(&g_cpu, exe.entry, 0, NULL);
@@ -25,7 +51,10 @@ static void *entry_thread(void *unused) {
 }
 int ds3_main(const Ds3Platform *p, const char *game, const char *docs) {
     static int started;
-    if (!game || !*game || !docs || !*docs) return 2;
+    static char docs_buf[1100];
+    if (!game || !*game) return 2;
+    if (!docs || !*docs) docs = default_docs(docs_buf, sizeof docs_buf);
+    if (!*docs) return 2;
     if (started++) { fprintf(stderr, "[ds3] one runtime session per process is required\n"); return 2; }
 #ifdef __ANDROID__
     setenv("DS3_DSOUND_CURSORS", "donor30", 0);
@@ -33,6 +62,9 @@ int ds3_main(const Ds3Platform *p, const char *game, const char *docs) {
     /* Classify the unity-rate DS ring before AAudio reports its rate. */
     setenv("ME1_AL_RATE", "48000", 0);
 #endif
+    if (!getenv("ME1_HLSL_CACHE")) {   /* compiled shaders survive runs that do not reach a clean exit */
+        static char hc[1100]; snprintf(hc, sizeof hc, "%s/me1_hlsl_cache", docs); setenv("ME1_HLSL_CACHE", hc, 0);
+    }
     const char *renderer = getenv("DS3_RENDERER");
     if (!renderer || !*renderer) renderer = "gles";
     if (strcmp(renderer, "gles") && strcmp(renderer, "vulkan")) {
@@ -52,6 +84,7 @@ int ds3_main(const Ds3Platform *p, const char *game, const char *docs) {
     setenv("ME1_PHONE_MOD", "0", 1);
     setenv("ME1_TEX_16", "0", 1);
     setenv("ME1_OCCLUSION", "1", 1); /* measured results, not legacy last-visible heuristic */
+    ds3cfg_apply_env(docs);          /* ds3port.ini -> ME1_* variables; the launcher appends nothing */
     gm_ds3_config();
     rt_init();
     hle_fs_layout("C:\\DeadSpace3", "C:\\DeadSpace3", 1);
@@ -78,7 +111,9 @@ int ds3_main(const Ds3Platform *p, const char *game, const char *docs) {
     hle_register_module(&exe, "C:\\DeadSpace3\\deadspace3.exe");
     rt_expect_image_crc(ds3_image_crc);
     const char *image = getenv("DS3_IMAGE");
-    rt_load_module(&exe, image && *image ? image : "out/exe/image.bin");
+    static char image_buf[1200];
+    if (!image || !*image) image = default_image(image_buf, sizeof image_buf);
+    rt_load_module(&exe, image);
     if (p) {
         platform = p;
         hle_window_hook = on_window;
@@ -102,7 +137,7 @@ int ds3_main(const Ds3Platform *p, const char *game, const char *docs) {
 }
 #ifndef DS3_LIB
 int main(int argc, char **argv) {
-    if (argc != 5) { fprintf(stderr, "usage: %s --game DIR --docs DIR\n", argv[0]); return 2; }
+    if (argc != 3 && argc != 5) { fprintf(stderr, "usage: %s --game DIR [--docs DIR]\n", argv[0]); return 2; }
     const char *game = NULL, *docs = NULL;
     for (int i = 1; i + 1 < argc; i += 2) {
         if (!strcmp(argv[i], "--game")) game = argv[i+1];

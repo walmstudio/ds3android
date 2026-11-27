@@ -603,7 +603,7 @@ static int aa_open(uintptr_t request) {
     int rate = AA.getrate(s);
     if (rate <= 0) { fprintf(stderr, "[al] AAudio: invalid sample rate\n"); AA.close(s); return 0; }
     int burst = AA.burst ? AA.burst(s) : 0;
-    if (AA.setbuf && burst > 0) { int want = burst * 4; while (want < rate / 25) want += burst; AA.setbuf(s, want); }   /* >= 40 ms */
+    if (AA.setbuf && burst > 0) { int want = burst * 4, floor = rate / 25; while (want < floor) want += burst; AA.setbuf(s, want); }   /* 4 bursts, >= 40 ms */
     g_aas = s;
     if (AA.start(s)) { fprintf(stderr, "[al] AAudio requestStart failed\n"); AA.close(s); g_aas = NULL; return 0; }
     return rate;

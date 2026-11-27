@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -84,17 +85,19 @@ static int self_check(void) {
     static const uint8_t expected_digest[32] = DS3_EXPECTED_IMAGE_SHA256;
     uint8_t actual_digest[32];
     int entry_mapped = 0;
+    const char *path = getenv("DS3_IMAGE");
+    if (!path || !*path) path = "out/exe/image.bin";
     for (unsigned i = 0; i < ds3_nfuncs; i++)
         if (ds3_funcs[i].va == ds3_entry && ds3_funcs[i].fn != NULL) entry_mapped = 1;
-    if (stat("out/exe/image.bin", &image) != 0) {
-        perror("out/exe/image.bin");
+    if (stat(path, &image) != 0) {
+        perror(path);
         return 1;
     }
     if ((uint64_t)image.st_size != ds3_image_size || ds3_base != DS3_EXPECTED_BASE ||
         ds3_entry != ds3_base + DS3_EXPECTED_ENTRY_RVA || ds3_entry < ds3_base ||
         ds3_entry >= ds3_base + ds3_image_size ||
         (DS3_RELOCATION_COUNT && DS3_RELOCATION_MAX_RVA + sizeof(uint32_t) > ds3_image_size) ||
-        !entry_mapped || !image_sha256("out/exe/image.bin", actual_digest) ||
+        !entry_mapped || !image_sha256(path, actual_digest) ||
         memcmp(actual_digest, expected_digest, sizeof actual_digest) != 0) {
         fputs("DS3 module self-check: FAILED\n", stderr);
         return 1;
